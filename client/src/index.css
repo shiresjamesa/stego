@@ -1,0 +1,67 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+
+.file-input-container, .file-output-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  align-items: center; 
+  height: 100%;
+}
+
+
+
+
+.homepage-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 94vh;
+  width: 100vw;
+  scrollbar-gutter: stable;
+}
+
+
+.splashpage-form-container, .encode-page-container, .deocde-page-container, .page-not-found-container {
+  margin: auto;
+  border: 0px solid black;
+  border-radius: 5px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 1);
+  animation: fadeIn 1.5s; 
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.container.page-not-found-container {
+  width: 25vw;
+  min-width: 500px;
+}
+
+.container.splashpage-form-container {
+  width: 50vw;
+  min-width: 450px;
+}
+
+.container.encode-page-container {
+  width: 90vw;
+  min-width: 90vw;
+}
+
+.container.decode-page-container {
+  width: 25vw;
+  min-width: 350px;
+}
+
+
