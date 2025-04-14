@@ -24,6 +24,12 @@ def encrypt_data(data: str, password: str) -> bytes:
     f = Fernet(key)
     return f.encrypt(data.encode()) 
 
+def hide_data(fileData: bytes, textData: bytes) -> io.BytesIO:
+    return io.BytesIO(fileData)
+
+def find_data(fileData: bytes) -> str:
+    return "WIP"
+
 def main():
     # start new flask app
     app = Flask(__name__)
@@ -54,10 +60,12 @@ def main():
             img = Image.open(file.stream)
 
             output_buffer = io.BytesIO()
-            img.save(output_buffer, format="PNG")  # TODO add file type check for JPEG or PNG
-            output_buffer.seek(0)
+            img.save(output_buffer, img.format)  # TODO make sure this works
+            
+            # TODO make sure the encrypt function works
+            changed_buffer = hide_data(output_buffer.getvalue(), encrypt_data(data,key))
 
-            return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
+            return send_file(changed_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
             return jsonify({"successful": False, "message": str(e)}), 500
@@ -76,10 +84,9 @@ def main():
             img = Image.open(file.stream)
 
             output_buffer = io.BytesIO()
-            img.save(output_buffer, format="PNG")  # TODO add file type check for JPEG or PNG
-            output_buffer.seek(0)
+            img.save(output_buffer, img.format)  # TODO make sure this works
 
-            data = "this is data"
+            data = find_data(output_buffer.getvalue())
 
             return jsonify({"successful": True, "message": data})
 
