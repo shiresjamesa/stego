@@ -28,18 +28,36 @@ def encrypt_data(data: str, password: str) -> bytes:
     return f.encrypt(data.encode()) 
 
 def hide_data(fileData, textData: str, width: int, height: int) -> io.BytesIO:
+    # work though each pixel, and its data (int)
     for x in range(width):
         for y in range(height):
             pixelData = list(fileData[x,y])
             for z in len(pixelData):
-                pixelData[z] = int(bin(fileData[x,y][z])[2:-1]+textData[0],2)
+                # change the last bit in the pixel's data to the text's next bit
+                pixelData[z] = int(bin(pixelData[z])[2:-1]+textData[0],2)
                 fileData[x,y] = tuple(pixelData)
+                # truncate the data by that one bit
                 textData = textData[1:]
                 if(textData == ""):
                     return
 
-def find_data(fileData) -> bytes:
-    return "WIP"
+def find_data(fileData, width: int, height: int) -> bytes:
+    textData = ""
+    byteData = ""
+    # work though each pixel
+    for x in range(width):
+        for y in range(height):
+            for z in len(fileData[x,y]):
+                # append the LSB of each pixel's data
+                byteData += bin(fileData[x,y][z])[-1]
+                if (len(byteData) == 8):
+                    # once there is 8 bits, save it as a character
+                    textData += chr(int(byteData,2))
+                    # if that character is the EOF character, return
+                    if (textData[-1]==EOFCHAR):
+                        return textData[:-1].encode('utf-8')
+                    byteData = ""
+    return textData.encode('utf-8')
 
 def main():
     # start new flask app
@@ -109,10 +127,11 @@ def main():
             if img.format != 'PNG':
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
 
-            data = find_data(img.load())
-            dataString = data.decode('utf-8')
+            data = find_data(img.load(), img.width, img.height)
 
             # TODO decrypt the data
+            dataString = data.decode('utf-8')
+
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
