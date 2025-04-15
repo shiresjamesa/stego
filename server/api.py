@@ -15,6 +15,9 @@ import base64
 import hashlib
 import os
 
+# TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
+EOFCHAR = '\r'
+
 def derive_key(password: str) -> bytes:
     hashed = hashlib.sha256(password.encode()).digest()
     return base64.urlsafe_b64encode(hashed)
@@ -24,10 +27,18 @@ def encrypt_data(data: str, password: str) -> bytes:
     f = Fernet(key)
     return f.encrypt(data.encode()) 
 
-def hide_data(fileData: bytes, textData: bytes) -> io.BytesIO:
-    return io.BytesIO(fileData)
+def hide_data(fileData, textData: str, width: int, height: int) -> io.BytesIO:
+    for x in range(width):
+        for y in range(height):
+            pixelData = list(fileData[x,y])
+            for z in len(pixelData):
+                pixelData[z] = int(bin(fileData[x,y][z])[2:-1]+textData[0],2)
+                fileData[x,y] = tuple(pixelData)
+                textData = textData[1:]
+                if(textData == ""):
+                    return
 
-def find_data(fileData: bytes) -> str:
+def find_data(fileData) -> bytes:
     return "WIP"
 
 def main():
@@ -57,15 +68,27 @@ def main():
             if not file or not key or not data:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
+            # Open image and convert to png
             img = Image.open(file.stream)
-
             output_buffer = io.BytesIO()
-            img.save(output_buffer, img.format)  # TODO make sure this works
-            
-            # TODO make sure the encrypt function works
-            changed_buffer = hide_data(output_buffer.getvalue(), encrypt_data(data,key))
+            img.save(output_buffer, "png")
 
-            return send_file(changed_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
+            # Encrypt data and make sure the image is large enough to hide it
+            # TODO make sure the encrypt function works
+            data = encrypt_data(data, key)            
+            if (len(data) > img.width * img.height * len(img.getbands()) // 8):
+                # TODO Is returning an error the correct thing to do here?
+                return jsonify({"successful": False, "message": "Image too small for provided password."}), 400
+            
+            # Add EOF Character to data, and convert data into a binary string
+            data += EOFCHAR.encode('utf-8')
+            dataString = ''.join(f'{byte:08b}' for byte in data)
+
+            # Hide the data into the image, and save it to the output buffer
+            hide_data(img.load(), dataString, img.width, img.height)
+            img.save(output_buffer, "png")
+
+            return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
             return jsonify({"successful": False, "message": str(e)}), 500
@@ -82,13 +105,15 @@ def main():
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
             img = Image.open(file.stream)
+            # Make sure it is in PNG Format, may change this later
+            if img.format != 'PNG':
+                return jsonify({"successful": False, "message": "PNG format expected."}), 400
 
-            output_buffer = io.BytesIO()
-            img.save(output_buffer, img.format)  # TODO make sure this works
+            data = find_data(img.load())
+            dataString = data.decode('utf-8')
 
-            data = find_data(output_buffer.getvalue())
-
-            return jsonify({"successful": True, "message": data})
+            # TODO decrypt the data
+            return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
             return jsonify({"successful": False, "message": str(e)}), 500
