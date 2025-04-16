@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 import base64
 import hashlib
 import os
+import random
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
 EOFCHAR = '\r'
@@ -27,10 +28,17 @@ def encrypt_data(data: str, password: str) -> bytes:
     f = Fernet(key)
     return f.encrypt(data.encode()) 
 
-def hide_data(fileData, textData: str, width: int, height: int) -> io.BytesIO:
+def hide_data(fileData, textData: str, img_width: int, img_height: int, key=None) -> io.BytesIO:
+    width = list(range(img_width))
+    height = list(range(img_height))
+    # If key is provided, shuffle pixel order
+    if key != None:
+        random.seed(key)
+        random.shuffle(width)
+        random.shuffle(height)
     # work though each pixel, and its data (int)
-    for x in range(width):
-        for y in range(height):
+    for x in width:
+        for y in height:
             pixelData = list(fileData[x,y])
             for z in range(len(pixelData)):
                 # change the last bit in the pixel's data to the text's next bit
@@ -41,12 +49,19 @@ def hide_data(fileData, textData: str, width: int, height: int) -> io.BytesIO:
                 if(textData == ""):
                     return
 
-def find_data(fileData, width: int, height: int) -> bytes:
+def find_data(fileData, img_width: int, img_height: int, key=None) -> bytes:
+    width = list(range(img_width))
+    height = list(range(img_height))
+    # If key is provided, shuffle pixel order
+    if key != None:
+        random.seed(key)
+        random.shuffle(width)
+        random.shuffle(height)
     textData = ""
     byteData = ""
     # work though each pixel
-    for x in range(width):
-        for y in range(height):
+    for x in width:
+        for y in height:
             for z in range(len(fileData[x,y])):
                 # append the LSB of each pixel's data
                 byteData += bin(fileData[x,y][z])[-1]
@@ -55,7 +70,7 @@ def find_data(fileData, width: int, height: int) -> bytes:
                     textData += chr(int(byteData,2))
                     # if that character is the EOF character, return
                     if (textData[-1]==EOFCHAR):
-                        return textData[:-1].encode('utf-8')
+                        return textData[:-1]#.encode('utf-8') #CHANGE
                     byteData = ""
     return textData.encode('utf-8')
 
@@ -89,22 +104,22 @@ def main():
             # Open image and convert to png
             img = Image.open(file.stream)
             output_buffer = io.BytesIO()
-            img.save(output_buffer, "png")
+            img.save(output_buffer, "PNG")
 
-            # Encrypt data and make sure the image is large enough to hide it
-            # TODO make sure the encrypt function works
-            data = encrypt_data(data, key)     
+            # Make sure the image is large enough to hide it
+            #data = encrypt_data(data, key) #CHANGE, shuffling not encrypting
             if (len(data) > img.width * img.height * len(img.getbands()) // 8):
                 # TODO Is returning an error the correct thing to do here?
                 return jsonify({"successful": False, "message": "Image too small for provided password."}), 400
 
             # Add EOF Character to data, and convert data into a binary string
-            data += EOFCHAR.encode('utf-8')
-            dataString = ''.join(f'{byte:08b}' for byte in data)
+            data += EOFCHAR#.encode('utf-8') #CHANGE for string data
+            # dataString = ''.join(f'{byte:08b}' for byte in data) #CHANGED for string data
+            dataString = ''.join(format(ord(byte), 'b').zfill(8) for byte in data)
 
             # Hide the data into the image, and save it to the output buffer
-            hide_data(img.load(), dataString, img.width, img.height)
-            img.save(output_buffer, "png")
+            hide_data(img.load(), dataString, img.width, img.height, key) #CHANGE:added key for shuffling
+            img.save(output_buffer, "PNG")
 
             output_buffer.seek(0) # reset buffer location before returning file
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
@@ -130,10 +145,10 @@ def main():
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
 
             print('test2')
-            data = find_data(img.load(), img.width, img.height)
-
+            
             # TODO decrypt the data
-            dataString = data.decode('utf-8')
+            #dataString = data.decode('utf-8') #CHANGE shuffling not decrypting
+            dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
 
             print('test3')
             return jsonify({"successful": True, "message": dataString})
