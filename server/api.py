@@ -16,17 +16,7 @@ import hashlib
 import os
 import random
 
-# TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
-EOFCHAR = '\r'
-
-def derive_key(password: str) -> bytes:
-    hashed = hashlib.sha256(password.encode()).digest()
-    return base64.urlsafe_b64encode(hashed)
-
-def encrypt_data(data: str, password: str) -> bytes:
-    key = derive_key(password)
-    f = Fernet(key)
-    return f.encrypt(data.encode()) 
+EOF_CHR = '\r'
 
 def hide_data(fileData, textData: str, img_width: int, img_height: int, key=None) -> io.BytesIO:
     width = list(range(img_width))
@@ -69,8 +59,8 @@ def find_data(fileData, img_width: int, img_height: int, key=None) -> bytes:
                     # once there is 8 bits, save it as a character
                     textData += chr(int(byteData,2))
                     # if that character is the EOF character, return
-                    if (textData[-1]==EOFCHAR):
-                        return textData[:-1]#.encode('utf-8') #CHANGE
+                    if (textData[-1]==EOF_CHR):
+                        return textData[:-1]
                     byteData = ""
     return textData.encode('utf-8')
 
@@ -107,21 +97,23 @@ def main():
             img.save(output_buffer, "PNG")
 
             # Make sure the image is large enough to hide it
-            #data = encrypt_data(data, key) #CHANGE, shuffling not encrypting
             if (len(data) > img.width * img.height * len(img.getbands()) // 8):
                 # TODO Is returning an error the correct thing to do here?
                 return jsonify({"successful": False, "message": "Image too small for provided password."}), 400
 
             # Add EOF Character to data, and convert data into a binary string
-            data += EOFCHAR#.encode('utf-8') #CHANGE for string data
-            # dataString = ''.join(f'{byte:08b}' for byte in data) #CHANGED for string data
+            if (EOF_CHR in data):
+                # TODO, idk what to do here, return with an error?
+                return jsonify({"successful": False, "message": "Invalid byte in data field"}), 400
+            data += EOF_CHR
             dataString = ''.join(format(ord(byte), 'b').zfill(8) for byte in data)
 
             # Hide the data into the image, and save it to the output buffer
-            hide_data(img.load(), dataString, img.width, img.height, key) #CHANGE:added key for shuffling
+            hide_data(img.load(), dataString, img.width, img.height, key)
             img.save(output_buffer, "PNG")
-
-            output_buffer.seek(0) # reset buffer location before returning file
+            
+            # reset buffer location before returning file
+            output_buffer.seek(0) 
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
@@ -135,7 +127,6 @@ def main():
             file = request.files.get('file')
             key = request.form.get('key')
 
-            print('test1')
             if not file or not key:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
@@ -143,14 +134,9 @@ def main():
             # Make sure it is in PNG Format, may change this later
             if img.format != 'PNG':
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
-
-            print('test2')
             
-            # TODO decrypt the data
-            #dataString = data.decode('utf-8') #CHANGE shuffling not decrypting
-            dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
+            dataString = find_data(img.load(), img.width, img.height, key)
 
-            print('test3')
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
