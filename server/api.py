@@ -32,7 +32,7 @@ def hide_data(fileData, textData: str, width: int, height: int) -> io.BytesIO:
     for x in range(width):
         for y in range(height):
             pixelData = list(fileData[x,y])
-            for z in len(pixelData):
+            for z in range(len(pixelData)):
                 # change the last bit in the pixel's data to the text's next bit
                 pixelData[z] = int(bin(pixelData[z])[2:-1]+textData[0],2)
                 fileData[x,y] = tuple(pixelData)
@@ -47,7 +47,7 @@ def find_data(fileData, width: int, height: int) -> bytes:
     # work though each pixel
     for x in range(width):
         for y in range(height):
-            for z in len(fileData[x,y]):
+            for z in range(len(fileData[x,y])):
                 # append the LSB of each pixel's data
                 byteData += bin(fileData[x,y][z])[-1]
                 if (len(byteData) == 8):
@@ -93,11 +93,11 @@ def main():
 
             # Encrypt data and make sure the image is large enough to hide it
             # TODO make sure the encrypt function works
-            data = encrypt_data(data, key)            
+            data = encrypt_data(data, key)     
             if (len(data) > img.width * img.height * len(img.getbands()) // 8):
                 # TODO Is returning an error the correct thing to do here?
                 return jsonify({"successful": False, "message": "Image too small for provided password."}), 400
-            
+
             # Add EOF Character to data, and convert data into a binary string
             data += EOFCHAR.encode('utf-8')
             dataString = ''.join(f'{byte:08b}' for byte in data)
@@ -106,6 +106,7 @@ def main():
             hide_data(img.load(), dataString, img.width, img.height)
             img.save(output_buffer, "png")
 
+            output_buffer.seek(0) # reset buffer location before returning file
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
@@ -119,6 +120,7 @@ def main():
             file = request.files.get('file')
             key = request.form.get('key')
 
+            print('test1')
             if not file or not key:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
@@ -127,11 +129,13 @@ def main():
             if img.format != 'PNG':
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
 
+            print('test2')
             data = find_data(img.load(), img.width, img.height)
 
             # TODO decrypt the data
             dataString = data.decode('utf-8')
 
+            print('test3')
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:

@@ -56,7 +56,7 @@ export default function DecodePage() {
         formData.append("key", encryptionKey);
     
         try {
-            const response = await axios.post('/decode', formData, {
+            const response = await axios.post('/decode/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
