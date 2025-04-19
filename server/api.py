@@ -17,6 +17,7 @@ import os
 import random
 import math
 from collections import Counter
+import traceback
 
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
@@ -129,7 +130,7 @@ def main():
             # Add EOF Character to data, and convert data into a binary string
             data += EOFCHAR#.encode('utf-8') #CHANGE for string data
             # dataString = ''.join(f'{byte:08b}' for byte in data) #CHANGED for string data
-            dataString = ''.join(format(ord(byte), 'b').zfill(8) for byte in data)
+            dataString = ''.join(format(ord(byte), '08b') for byte in data)
 
             # Hide the data into the image, and save it to the output buffer
             hide_data(img.load(), dataString, img.width, img.height, key) #CHANGE:added key for shuffling
@@ -139,6 +140,7 @@ def main():
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"successful": False, "message": str(e)}), 500
 
 
@@ -149,7 +151,6 @@ def main():
             file = request.files.get('file')
             key = request.form.get('key')
 
-            print('test1')
             if not file or not key:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
@@ -157,18 +158,15 @@ def main():
             # Make sure it is in PNG Format, may change this later
             if img.format != 'PNG':
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
-
-            print('test2')
             
             # TODO decrypt the data
             #dataString = data.decode('utf-8') #CHANGE shuffling not decrypting
             dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
-            print(repr(dataString)) 
-            print('test3')
+
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
-            print(e)
+            traceback.print_exc()
             return jsonify({"successful": False, "message": str(e)}), 500
 
 
