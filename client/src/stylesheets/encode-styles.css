@@ -1,10 +1,4 @@
-/*
-* Contains all CSS styles related to the create board form
-*/
-.create-board-container {
-    animation: fadeIn 0.7s;
-    min-width: 915px
-}
+
 
 .encode-image-container {
     margin: auto;

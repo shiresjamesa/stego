@@ -15,6 +15,9 @@ import base64
 import hashlib
 import os
 import random
+import math
+from collections import Counter
+
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
 EOFCHAR = '\r'
@@ -27,6 +30,17 @@ def encrypt_data(data: str, password: str) -> bytes:
     key = derive_key(password)
     f = Fernet(key)
     return f.encrypt(data.encode()) 
+
+def calc_byte_counts(data):
+    counts = Counter(data)
+    return dict(counts)
+
+def calc_entropy(byte_counts, total_bytes):
+    entropy = 0.0
+    for count in byte_counts.values():
+        p_x = count / total_bytes
+        entropy -= p_x * math.log2(p_x)
+    return entropy
 
 def hide_data(fileData, textData: str, img_width: int, img_height: int, key=None) -> io.BytesIO:
     width = list(range(img_width))
@@ -149,13 +163,30 @@ def main():
             # TODO decrypt the data
             #dataString = data.decode('utf-8') #CHANGE shuffling not decrypting
             dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
-
+            print(repr(dataString)) 
             print('test3')
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
+            print(e)
             return jsonify({"successful": False, "message": str(e)}), 500
 
+
+
+    # Analyze route
+    @app.route('/analyze/', methods=['POST'])
+    def analyze():
+        file = request.files.get('file')
+        print(file)
+        data = file.read() 
+
+        byte_counts = calc_byte_counts(data)
+        entropy = calc_entropy(byte_counts, len(data))
+
+        return {
+            'byte_counts': byte_counts,
+            'entropy': entropy
+        }
 
     # run the app
     app.run(host='0.0.0.0', port=5000)
