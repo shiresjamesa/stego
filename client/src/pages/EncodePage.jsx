@@ -220,7 +220,7 @@ export default function EncodePage() {
                         <button 
                             type="button" 
                             className="btn btn-secondary"
-                            style={{ height: '2vw'}}
+                            style={{ height: '2.5vw'}}
                             onClick={ handleReturnClick }>
                             Return
                         </button>
@@ -247,7 +247,7 @@ export default function EncodePage() {
                         <button 
                             type="button" 
                             className="btn btn-success"
-                            style={{ height: '2vw'}}
+                            style={{ height: '2.5vw'}}
                             onClick={ handleFormSubmit }>
                             Submit
                         </button>

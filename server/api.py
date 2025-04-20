@@ -17,10 +17,11 @@ import os
 import random
 import math
 from collections import Counter
+import traceback
 
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
-EOFCHAR = '\r'
+EOF_CHR = '\r'
 
 def derive_key(password: str) -> bytes:
     hashed = hashlib.sha256(password.encode()).digest()
@@ -141,6 +142,7 @@ def main():
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
 
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"successful": False, "message": str(e)}), 500
 
 
@@ -162,12 +164,11 @@ def main():
             print('test2')
             
             dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
-            print(repr(dataString)) 
-            print('test3')
+
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
-            print(e)
+            traceback.print_exc()
             return jsonify({"successful": False, "message": str(e)}), 500
 
 

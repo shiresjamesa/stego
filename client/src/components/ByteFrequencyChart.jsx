@@ -52,7 +52,7 @@ export default function ByteFrequencyChart({ byteCounts }) {
   };
 
   return (
-    <div style={{ height: '20vw', width: '42vw' }}>
+    <div style={{ height: '20vw', width: '35vw' }}>
       <Bar data={data} options={options} />
     </div>
   );

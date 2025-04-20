@@ -3,10 +3,9 @@ import { useState } from 'react';
 import axios from '../api/axios';
 import ByteFrequencyChart from '../components/ByteFrequencyChart';
 
-
 /**
- * Renders decoding page and provides functionality
- * @returns Render of decoding page
+ * Renders analyze page and provides functionality
+ * @returns Render of analyze page
  */
 export default function AnalyzePage() {
 
@@ -39,7 +38,7 @@ export default function AnalyzePage() {
         }
     };
     
-    const handleFileChange2 = async (e) => {
+    const handleFile2Change = async (e) => {
         const selectedFile = e.target.files[0];
         if (!selectedFile) return;
     
@@ -75,7 +74,10 @@ export default function AnalyzePage() {
     };
 
     const handleReset = async (e) => {
-
+        setAnalysis1(null)
+        setAnalysis2(null)
+        setFile1(null)
+        setFile2(null)
     }
  
     // Render components of the analyze page
@@ -92,13 +94,13 @@ export default function AnalyzePage() {
                 <br />
 
                 {/* Row containing file input, text input, and output */}
-                <div className="row">
+                <div className="row justify-content-center">
 
                     {/* LEFT SIDE: Image 1 */}
 
                         {/* File upload window */}
                         {!analysis1 && (
-                            <div className="col-6 pt-2 image-analysis-form" style={{ alignItems: 'center', justifyContent: 'center'}}>
+                            <div className="col-5 pt-2 image-analysis-form" style={{ alignItems: 'center', justifyContent: 'center'}}>
                                 <div className="row">
                                     <div className="form-group text-center">
                                         <label htmlFor="fileUpload" className="form-label">Upload Original Media:</label>
@@ -122,7 +124,7 @@ export default function AnalyzePage() {
                         
                         {/* Analysis window */}
                         {analysis1 && (
-                            <div className="col-6 pt-2 image-analysis-form">
+                            <div className="col-5 pt-2 image-analysis-form">
                                 {/* Row for entropy */}
                                 <div className="row">
                                     <div className="d-flex justify-content-center">
@@ -149,14 +151,66 @@ export default function AnalyzePage() {
                             
                         )}
                     
-                        
+                        <div className="col-1" />
 
+                        {/* File upload window */}
+                        {!analysis2 && (
+                            <div className="col-5 pt-2 image-analysis-form" style={{ alignItems: 'center', justifyContent: 'center'}}>
+                                <div className="row">
+                                    <div className="form-group text-center">
+                                        <label htmlFor="fileUpload" className="form-label">Upload Original Media:</label>
+                                        <input 
+                                            type="file" 
+                                            className="form-control" 
+                                            id="fileUpload" 
+                                            onChange={ handleFile2Change } 
+                                            accept=".png, .jpg, .jpeg"
+                                            style={{
+                                                padding: '10px', 
+                                                border: '2px dashed #007bff',
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                            
                         
+                        {/* Analysis window */}
+                        {analysis2 && (
+                            <div className="col-5 pt-2 image-analysis-form">
+                                {/* Row for entropy */}
+                                <div className="row">
+                                    <div className="d-flex justify-content-center">
+                                        <h5><strong>Entropy:</strong> {analysis2.entropy?.toFixed(4)}</h5>
+                                    </div>
+                                </div>
+                                    
+                                {/* Row for viewport */}
+                                <div className="row">
+
+                                </div>
+
+
+                                {/* Row for byte graph */}
+                                <div className="row">
+                                    <div className="mt-3 p-3 bg-white border rounded shadow-sm">
+                                        <ByteFrequencyChart byteCounts={analysis2.byte_counts} />
+                                    </div>
+                                </div>
+                                
+
+                            </div>
+                        )}
                         
                         
                 
-            
-                    <div className="col-6"></div>
+                    <div className="col-6">
+
+
+                    </div>
+
                 </div>
 
                 {/* Row containing Return and Submit buttons along with sizes and file type */}
@@ -167,7 +221,7 @@ export default function AnalyzePage() {
                         <button 
                             type="button" 
                             className="btn btn-secondary"
-                            style={{ height: '2.5vw'}}
+                            style={{ height: '2.5vw' }}
                             onClick={ handleReturnClick }>
                             Return
                         </button>
@@ -178,7 +232,7 @@ export default function AnalyzePage() {
                         <button 
                             type="button" 
                             className="btn btn-success"
-                            style={{ height: '2.5vw'}}
+                            style={{ height: '2.5vw' }}
                             onClick={ handleReset }>
                             Reset
                         </button>
