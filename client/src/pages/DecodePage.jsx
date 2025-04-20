@@ -49,7 +49,7 @@ export default function DecodePage() {
         e.preventDefault();
         setLoading(true);
         setErrorMessage('');
-        setDataOutput(''); // clear previous output
+        setDataOutput('');
     
         const formData = new FormData();
         formData.append("file", file);
@@ -88,7 +88,7 @@ export default function DecodePage() {
 
                 {/* Row containing page title */}
                 <div className="row pt-3 text-center">
-                    <h4>Encode</h4>
+                    <h4>Decode</h4>
                 </div>
                 
                 <br />

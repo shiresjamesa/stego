@@ -15,8 +15,32 @@ import base64
 import hashlib
 import os
 import random
+import math
+from collections import Counter
 
-EOF_CHR = '\r'
+
+# TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
+EOFCHAR = '\r'
+
+def derive_key(password: str) -> bytes:
+    hashed = hashlib.sha256(password.encode()).digest()
+    return base64.urlsafe_b64encode(hashed)
+
+def encrypt_data(data: str, password: str) -> bytes:
+    key = derive_key(password)
+    f = Fernet(key)
+    return f.encrypt(data.encode()) 
+
+def calc_byte_counts(data):
+    counts = Counter(data)
+    return dict(counts)
+
+def calc_entropy(byte_counts, total_bytes):
+    entropy = 0.0
+    for count in byte_counts.values():
+        p_x = count / total_bytes
+        entropy -= p_x * math.log2(p_x)
+    return entropy
 
 def hide_data(fileData, textData: str, img_width: int, img_height: int, key=None) -> io.BytesIO:
     width = list(range(img_width))
@@ -91,7 +115,7 @@ def main():
             if not file or not key or not data:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
-            # Open image and convert to png
+            # Open image and make sure it is large enough to hide it
             img = Image.open(file.stream)
             output_buffer = io.BytesIO()
             img.save(output_buffer, "PNG")
@@ -109,7 +133,7 @@ def main():
             dataString = ''.join(format(ord(byte), 'b').zfill(8) for byte in data)
 
             # Hide the data into the image, and save it to the output buffer
-            hide_data(img.load(), dataString, img.width, img.height, key)
+            hide_data(img.load(), dataString, img.width, img.height, key) #CHANGE:added key for shuffling
             img.save(output_buffer, "PNG")
             
             # reset buffer location before returning file
@@ -134,14 +158,34 @@ def main():
             # Make sure it is in PNG Format, may change this later
             if img.format != 'PNG':
                 return jsonify({"successful": False, "message": "PNG format expected."}), 400
-            
-            dataString = find_data(img.load(), img.width, img.height, key)
 
+            print('test2')
+            
+            dataString = find_data(img.load(), img.width, img.height, key) #CHANGE:added key for shuffling
+            print(repr(dataString)) 
+            print('test3')
             return jsonify({"successful": True, "message": dataString})
 
         except Exception as e:
+            print(e)
             return jsonify({"successful": False, "message": str(e)}), 500
 
+
+
+    # Analyze route
+    @app.route('/analyze/', methods=['POST'])
+    def analyze():
+        file = request.files.get('file')
+        print(file)
+        data = file.read() 
+
+        byte_counts = calc_byte_counts(data)
+        entropy = calc_entropy(byte_counts, len(data))
+
+        return {
+            'byte_counts': byte_counts,
+            'entropy': entropy
+        }
 
     # run the app
     app.run(host='0.0.0.0', port=5000)
