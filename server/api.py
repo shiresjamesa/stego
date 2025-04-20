@@ -116,12 +116,8 @@ def main():
             if not file or not key or not data:
                 return jsonify({"successful": False, "message": "Missing required data."}), 400
 
-            # Open image and make sure it is large enough to hide it
+            # Open the image and make sure it is large enough to hide it
             img = Image.open(file.stream)
-            output_buffer = io.BytesIO()
-            img.save(output_buffer, "PNG")
-
-            # Make sure the image is large enough to hide it
             if (len(data) > img.width * img.height * len(img.getbands()) // 8):
                 # TODO Is returning an error the correct thing to do here?
                 return jsonify({"successful": False, "message": "Image too small for provided password."}), 400
@@ -135,8 +131,9 @@ def main():
 
             # Hide the data into the image, and save it to the output buffer
             hide_data(img.load(), dataString, img.width, img.height, key) #CHANGE:added key for shuffling
+            output_buffer = io.BytesIO()
             img.save(output_buffer, "PNG")
-            
+
             # reset buffer location before returning file
             output_buffer.seek(0) 
             return send_file(output_buffer, mimetype='image/png', as_attachment=True, download_name='encoded.png')
