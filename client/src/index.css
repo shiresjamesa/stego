@@ -25,6 +25,8 @@
   display: flex;
   flex-direction: column; 
   height: 50vw;
+  max-height: 50vw;
+  overflow-y: auto,
 }
 
 

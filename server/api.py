@@ -18,7 +18,8 @@ import random
 import math
 from collections import Counter
 import traceback
-
+import numpy as np
+from scipy.stats import skew, kurtosis
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
 EOF_CHR = '\r'
@@ -168,22 +169,79 @@ def main():
             traceback.print_exc()
             return jsonify({"successful": False, "message": str(e)}), 500
 
-
-
     # Analyze route
     @app.route('/analyze/', methods=['POST'])
     def analyze():
-        file = request.files.get('file')
-        print(file)
-        data = file.read() 
+        try:
+            file = request.files.get('file')
 
-        byte_counts = calc_byte_counts(data)
-        entropy = calc_entropy(byte_counts, len(data))
+            # Testing
+            img = Image.open(file.stream).convert('RGB')
+            width, height = img.size
+            mode = img.mode
+            channels = len(mode)  # use the length of the string lol
+            uncompressed_size = width * height * channels  # in bytes
+            print(f"Uncompressed size: {uncompressed_size / (1024 * 1024):.2f} MB")
+            print(img.mode)
 
-        return {
-            'byte_counts': byte_counts,
-            'entropy': entropy
-        }
+            # Load and convert image to RGB
+            img = Image.open(file.stream).convert('RGB')
+            img_np = np.array(img)
+            flat_bytes = img_np.flatten().astype(np.uint8)
+
+            # Byte frequency
+            byte_counts = Counter(flat_bytes)
+            total_bytes = len(flat_bytes)
+            entropy = -sum((count / total_bytes) * math.log2(count / total_bytes) for count in byte_counts.values())
+            byte_counts_json = {int(k): int(v) for k, v in byte_counts.items()}
+
+            # LSB uiformity
+            lsb_array = flat_bytes & 1
+            lsb_uniformity = float(np.std(lsb_array))
+
+            # Byte statistics
+            overall_stats = {
+                'entropy': entropy,
+                'lsb_uniformity': lsb_uniformity,
+                'mean': float(np.mean(flat_bytes)),
+                'median': float(np.median(flat_bytes)),
+                'mode': int(np.bincount(flat_bytes).argmax()),
+                'std_dev': float(np.std(flat_bytes)),
+                'skewness': float(skew(flat_bytes)),
+                'kurtosis': float(kurtosis(flat_bytes)),
+            }
+
+            # RGB statistics
+            rgb_stats = {}
+            for idx, channel in enumerate(['R', 'G', 'B']):
+                values = img_np[:, :, idx].flatten()
+                rgb_stats[channel] = {
+                    'mean': float(np.mean(values)),
+                    'median': float(np.median(values)),
+                    'mode': int(np.bincount(values).argmax()),
+                    'std_dev': float(np.std(values)),
+                    'skewness': float(skew(values)),
+                    'kurtosis': float(kurtosis(values)),
+                }
+
+            # Histograms per color
+            histograms = {}
+            for index, channel in enumerate(['R', 'G', 'B']):
+                hist, _ = np.histogram(img_np[:, :, index], bins=256, range=(0, 256))
+                histograms[channel] = {int(i): int(v) for i, v in enumerate(hist)}
+
+            return jsonify({
+                'overall_byte_stats': overall_stats,
+                'rgb_stats': rgb_stats,
+                'byte_counts': byte_counts_json,
+                'histograms': histograms
+            })
+
+        except Exception as e:
+            traceback.print_exc()
+            return jsonify({"error": str(e)}), 500
+
+
 
     # run the app
     app.run(host='0.0.0.0', port=5000)
