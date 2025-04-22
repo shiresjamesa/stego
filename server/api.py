@@ -22,7 +22,7 @@ import numpy as np
 from scipy.stats import skew, kurtosis
 
 # TODO: this probably won't work with an encrypted string unless there is a restricted byte in said encryption
-EOF_CHR = '\r'
+EOF_CHR = '\0'
 
 def derive_key(password: str) -> bytes:
     hashed = hashlib.sha256(password.encode()).digest()
