@@ -32,7 +32,13 @@ export default function EncodePage() {
         if (selectedFile) {
             // Validate file type (.png or .jpg)
             const fileType = selectedFile.type;
-            if (fileType === "image/png" || fileType === "image/jpeg") {
+            if (
+                fileType === "image/png" || 
+                fileType === "image/jpeg" || 
+                fileType === "image/webp" || 
+                fileType === "image/tiff" ||
+                fileType === "image/gif"
+              ) {
                 setFile(selectedFile);
                 setFileType(selectedFile.type);
                 setFileSize(selectedFile.size);
@@ -136,7 +142,7 @@ export default function EncodePage() {
                                         className="form-control" 
                                         id="fileUpload" 
                                         onChange={ handleFileChange } 
-                                        accept=".png, .jpg, .jpeg"
+                                        accept=".png, .jpg, .jpeg, .webp, .tif, .gif"
                                         style={{
                                             padding: '10px', 
                                             border: '2px dashed #007bff',
