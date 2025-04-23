@@ -142,7 +142,7 @@ export default function EncodePage() {
                                         className="form-control" 
                                         id="fileUpload" 
                                         onChange={ handleFileChange } 
-                                        accept=".png, .jpg, .jpeg, .webp, .tif, .gif"
+                                        accept=".png, .jpg, .jpeg, .webp"
                                         style={{
                                             padding: '10px', 
                                             border: '2px dashed #007bff',

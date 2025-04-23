@@ -116,6 +116,14 @@ export default function AnalyzePage() {
                         <td>{overallStats.lsb_uniformity.toFixed(7)}</td>
                     </tr>
                     <tr>
+                        <td>Even Byte Ratio</td>
+                        <td>{overallStats.even_ratio.toFixed(3)}</td>
+                    </tr>
+                    <tr>
+                        <td>Odd Byte Ratio</td>
+                        <td>{overallStats.odd_ratio.toFixed(3)}</td>
+                    </tr>
+                    <tr>
                         <td>Mean</td>
                         <td>{overallStats.mean.toFixed(7)}</td>
                     </tr>

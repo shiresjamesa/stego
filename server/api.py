@@ -199,10 +199,18 @@ def main():
             lsb_array = flat_bytes & 1
             lsb_uniformity = float(np.std(lsb_array))
 
+            # Even / Odd ratio
+            even_count = np.sum(flat_bytes % 2 == 0)
+            odd_count = total_bytes - even_count
+            even_ratio = even_count / total_bytes
+            odd_ratio = odd_count / total_bytes
+
             # Byte statistics
             overall_stats = {
                 'entropy': entropy,
                 'lsb_uniformity': lsb_uniformity,
+                'even_ratio': round(even_ratio * 100, 2),
+                'odd_ratio': round(odd_ratio * 100, 2),
                 'mean': float(np.mean(flat_bytes)),
                 'median': float(np.median(flat_bytes)),
                 'mode': int(np.bincount(flat_bytes).argmax()),
